@@ -1,6 +1,6 @@
 local WIDTH = 32
 local HEIGHT = 32
-local MAX_VELOCITY = Vector(100, 100)
+local THRUST = 100
 
 return Class{
     init = function (self, position, world, player)
@@ -11,12 +11,11 @@ return Class{
         self.player = player
         self.world = world
         self.world:add(self, self.position.x, self.position.y, WIDTH, HEIGHT)
+        self.shipType = 'chase'
     end,
 
     move = function (self, dt)
-        local targetVector = (self.player.position - self.position):normalized()
-        self.velocity.x = MAX_VELOCITY.x * targetVector.x
-        self.velocity.y = MAX_VELOCITY.y * targetVector.y
+        self.velocity = THRUST * (self.player.position - self.position):normalized()
 
         local goalX = self.position.x + self.velocity.x * dt
         local goalY = self.position.y + self.velocity.y * dt
@@ -28,8 +27,8 @@ return Class{
     end,
     
     filter = function (self, other)
-        if other.isLazy then return false
-        else return 'slide' end
+        if other.shipType == 'chase' then return 'slide'
+        else return false end
     end,
 
     setPosition = function (self, x, y)

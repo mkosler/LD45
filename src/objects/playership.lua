@@ -1,6 +1,6 @@
 local WIDTH = 16
 local HEIGHT = 16
-local MAX_VELOCITY = Vector(200, 200)
+local MAX_VELOCITY = Vector(400, 400)
 
 return Class{
     init = function (self, position, world)
@@ -34,7 +34,7 @@ return Class{
 
     draw = function (self)
         love.graphics.push('all')
-        love.graphics.setColor(255, 0, 0)
+        love.graphics.setColor(0, 255, 0)
         love.graphics.translate(self.position.x, self.position.y)
         love.graphics.rectangle('fill', 0, 0, WIDTH, HEIGHT)
         love.graphics.pop()

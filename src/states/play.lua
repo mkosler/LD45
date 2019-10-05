@@ -34,19 +34,26 @@ function Play:enter(prev)
     Timer.every(1, function ()
         local rand = love.math.random()
 
-        if rand > 0.5 then
+        if rand > 0.7 then
             table.insert(self.enemies, ChaseShip(
                 Vector(
                     love.math.random(10, love.graphics.getWidth() - 10),
                     love.math.random(10, love.graphics.getHeight() - 10)),
                 self.BUMP_WORLD,
                 self.playership))
-        else
+        elseif rand > 0.2 then
             table.insert(self.enemies, LazyShip(
                     Vector(
                         love.math.random(10, love.graphics.getWidth() - 10),
                         love.math.random(10, love.graphics.getHeight() - 10)),
                     self.BUMP_WORLD))
+        else
+            table.insert(self.enemies, RammingShip(
+                Vector(
+                    love.math.random(10, love.graphics.getWidth() - 10),
+                    love.math.random(10, love.graphics.getHeight() - 10)),
+                self.BUMP_WORLD,
+                self.playership))
         end
     end)
 end
