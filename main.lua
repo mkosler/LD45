@@ -1,3 +1,18 @@
-function love.draw()
-    love.graphics.print('Hello world!')
+Gamestate = require 'hump.gamestate'
+Class = require 'hump.class'
+Vector = require 'hump.vector'
+Timer = require 'hump.timer'
+Signal = require 'hump.signal'
+
+STATES = {
+    PLAY = require 'src.states.play'
+}
+
+function love.load()
+    Gamestate.registerEvents()
+    Gamestate.switch(STATES.PLAY)
+end
+
+function love.update(dt)
+    Timer.update(dt)
 end
