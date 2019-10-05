@@ -14,19 +14,37 @@ local CONTROLS = {
     RIGHT = false
 }
 
-local testEntity = { x = 500, y = 500, w = 20, h = 20 }
+local LEFT_WALL = { x = -10, y = 0, w = 10, h = love.graphics.getHeight(), isWall = true }
+local RIGHT_WALL = { x = love.graphics.getWidth(), y = 0, w = 10, h = love.graphics.getHeight(), isWall = true }
+local TOP_WALL = { x = 0, y = -10, w = love.graphics.getWidth(), h = 10, isWall = true }
+local BOTTOM_WALL = { x = 0, y = love.graphics.getHeight(), w = love.graphics.getWidth(), h = 10, isWall = true }
 
 function Play:enter(prev)
     self.BUMP_WORLD = bump.newWorld()
-    self.entities = {}
+
+    self.BUMP_WORLD:add(LEFT_WALL, LEFT_WALL.x, LEFT_WALL.y, LEFT_WALL.w, LEFT_WALL.h)
+    self.BUMP_WORLD:add(RIGHT_WALL, RIGHT_WALL.x, RIGHT_WALL.y, RIGHT_WALL.w, RIGHT_WALL.h)
+    self.BUMP_WORLD:add(TOP_WALL, TOP_WALL.x, TOP_WALL.y, TOP_WALL.w, TOP_WALL.h)
+    self.BUMP_WORLD:add(BOTTOM_WALL, BOTTOM_WALL.x, BOTTOM_WALL.y, BOTTOM_WALL.w, BOTTOM_WALL.h)
+
+    self.enemies = {}
+
+    for i = 1, 10 do
+        self.enemies[i] = LazyShip(
+                Vector(
+                    love.math.random(10, love.graphics.getWidth() - 10),
+                    love.math.random(10, love.graphics.getHeight() - 10)))
+        self.BUMP_WORLD:add(
+            self.enemies[i],
+            self.enemies[i].position.x,
+            self.enemies[i].position.y,
+            self.enemies[i].width,
+            self.enemies[i].height)
+    end
 
     self.playership = PlayerShip(Vector(300, 200))
     self.BUMP_WORLD:add(self.playership, self.playership.position.x, self.playership.position.y,
         self.playership.width, self.playership.height)
-    table.insert(self.entities, self.playership)
-
-    self.BUMP_WORLD:add(testEntity, testEntity.x, testEntity.y, testEntity.w, testEntity.h)
-    table.insert(self.entities, testEntity)
 end
 
 function Play:update(dt)
@@ -44,18 +62,30 @@ function Play:update(dt)
 
     local goalX, goalY = self.playership:move(dt, xAxis, yAxis)
     local actualX, actualY, cols, len = self.BUMP_WORLD:move(self.playership, goalX, goalY, self.playership.collide)
-    if len > 0 then print('hit!') end
+    -- if len > 0 then print('hit!') end
     self.playership:setPosition(actualX, actualY)
+
+    for _,v in pairs(self.enemies) do
+        local egx, egy = v:move(dt)
+        local eax, eay, ecols, elen = self.BUMP_WORLD:move(v, egx, egy, v.collide)
+        for i = 1, elen do
+            if ecols[i].bounce then
+                if ecols[i].normal.x ~= 0 then 
+                    v.velocity.x = v.velocity.x * -1
+                end
+                if ecols[i].normal.y ~= 0 then 
+                    v.velocity.y = v.velocity.y * -1
+                end
+            end
+        end
+        v:setPosition(eax, eay)
+    end
 end
 
 function Play:draw()
     self.playership:draw()
 
-    love.graphics.push('all')
-    love.graphics.setColor(0, 255, 0)
-    love.graphics.translate(testEntity.x, testEntity.y)
-    love.graphics.rectangle('line', 0, 0, testEntity.w, testEntity.h)
-    love.graphics.pop()
+    Utils.map(self.enemies, 'draw')
 end
 
 function Play:keypressed(key)

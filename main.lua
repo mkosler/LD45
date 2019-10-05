@@ -5,6 +5,8 @@ Timer = require 'hump.timer'
 Signal = require 'hump.signal'
 bump = require 'bump.bump'
 PlayerShip = require 'src.objects.playership'
+LazyShip = require 'src.objects.lazyship'
+Utils = require 'src.utils'
 
 STATES = {
     PLAY = require 'src.states.play'

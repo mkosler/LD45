@@ -7,7 +7,6 @@ return Class{
         self.position = position or Vector(0, 0)
         self.width = WIDTH
         self.height = HEIGHT
-        -- BUMP_WORLD:add(self, self.position.x, self.position.y, WIDTH, HEIGHT)
     end,
 
     -- Instant acceleration
@@ -18,7 +17,8 @@ return Class{
     end,
 
     collide = function (self, other)
-        return 'slide'
+        if other.isWall then return 'touch'
+        else return 'cross' end
     end,
 
     setPosition = function (self, x, y)
