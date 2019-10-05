@@ -16,8 +16,12 @@ return Class{
         Signal.register('explode', function (bombPosition)
             self.pushed = true
 
+            local len = self.velocity:len()
+            local normal = (bombPosition - self.position):normalized()
+            local recoilVector = normal * len
+
             local dist = self.position:dist(bombPosition) / 500
-            self.velocity = -self.velocity / dist
+            self.velocity = -recoilVector / dist
 
             Timer.tween(1, self.velocity, {x = 0, y = 0}, 'out-sine',
                 function () self.pushed = false end)

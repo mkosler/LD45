@@ -14,63 +14,75 @@ local CONTROLS = {
     RIGHT = false
 }
 
-local LEFT_WALL = { x = -10, y = 0, w = 10, h = love.graphics.getHeight(), isWall = true }
-local RIGHT_WALL = { x = love.graphics.getWidth(), y = 0, w = 10, h = love.graphics.getHeight(), isWall = true }
-local TOP_WALL = { x = 0, y = -10, w = love.graphics.getWidth(), h = 10, isWall = true }
-local BOTTOM_WALL = { x = 0, y = love.graphics.getHeight(), w = love.graphics.getWidth(), h = 10, isWall = true }
+local GRAVITY_PULSE_SPAWN_RATE_INCREMENT = 5
+
+local LEFT_WALL = { x = 40, y = 150, w = 10, h = love.graphics.getHeight() - 200, isWall = true }
+local RIGHT_WALL = { x = love.graphics.getWidth() - 50, y = 150, w = 10, h = love.graphics.getHeight() - 200, isWall = true }
+local TOP_WALL = { x = 50, y = 140, w = love.graphics.getWidth() - 100, h = 10, isWall = true }
+local BOTTOM_WALL = { x = 50, y = love.graphics.getHeight() - 50, w = love.graphics.getWidth() - 100, h = 10, isWall = true }
 
 function Play:spawnGravityPulse(time)
-    Timer.after(time, function ()
-        self.gravitypulse = GravityPulse(
-            Vector(love.graphics.getWidth() / 2, love.graphics.getHeight() / 2),
-            self.BUMP_WORLD)
-    end)
+    self.nextGravityPulseSpawnCountdown = time
 
-    return time + 10
+    Timer.during(time,
+        function (dt)
+            self.nextGravityPulseSpawnCountdown = self.nextGravityPulseSpawnCountdown - dt
+            self.gravityPulseText = ('Next gravity pulse: %.02f'):format(self.nextGravityPulseSpawnCountdown)
+        end, function ()
+            self.gravityPulseText = 'Gravity pulse spawned'
+            local x = love.math.random(100, love.graphics.getWidth() - 200)
+            local y = love.math.random(150, love.graphics.getHeight() - 200)
+            self.gravitypulse = GravityPulse(
+                Vector(x, y),
+                self.BUMP_WORLD)
+        end)
+
+    return time + GRAVITY_PULSE_SPAWN_RATE_INCREMENT
 end
 
 function Play:enter(prev)
+    -- Score timer
+    self.scoreTimer = 0
+
     self.BUMP_WORLD = bump.newWorld()
 
+    -- Playing field walls
     self.BUMP_WORLD:add(LEFT_WALL, LEFT_WALL.x, LEFT_WALL.y, LEFT_WALL.w, LEFT_WALL.h)
     self.BUMP_WORLD:add(RIGHT_WALL, RIGHT_WALL.x, RIGHT_WALL.y, RIGHT_WALL.w, RIGHT_WALL.h)
     self.BUMP_WORLD:add(TOP_WALL, TOP_WALL.x, TOP_WALL.y, TOP_WALL.w, TOP_WALL.h)
     self.BUMP_WORLD:add(BOTTOM_WALL, BOTTOM_WALL.x, BOTTOM_WALL.y, BOTTOM_WALL.w, BOTTOM_WALL.h)
 
-    self.playership = PlayerShip(Vector(300, 200), self.BUMP_WORLD)
-
-    self.enemies = {}
-
+    -- Gravity pulse logic
     self.gravitypulse = nil
-
+    self.nextGravityPulseSpawnCountdown = nil
     self.nextGravityPulseSpawnTime = self:spawnGravityPulse(10)
-
     Signal.register('explode', function ()
         self.gravitypulse = nil
         self.nextGravityPulseSpawnTime = self:spawnGravityPulse(self.nextGravityPulseSpawnTime)
     end)
 
+    -- Player
+    self.playership = PlayerShip(Vector(300, 200), self.BUMP_WORLD)
+
+    -- Enemies
+    self.enemies = {}
     Timer.every(1, function ()
         local rand = love.math.random()
+        local x = love.math.random(100, love.graphics.getWidth() - 100)
+        local y = love.math.random(150, love.graphics.getHeight() - 100)
 
         if rand > 0.7 then
             table.insert(self.enemies, ChaseShip(
-                Vector(
-                    love.math.random(10, love.graphics.getWidth() - 10),
-                    love.math.random(10, love.graphics.getHeight() - 10)),
+                Vector(x, y),
                 self.BUMP_WORLD,
                 self.playership))
         elseif rand > 0.2 then
             table.insert(self.enemies, LazyShip(
-                    Vector(
-                        love.math.random(10, love.graphics.getWidth() - 10),
-                        love.math.random(10, love.graphics.getHeight() - 10)),
-                    self.BUMP_WORLD))
+                Vector(x, y),
+                self.BUMP_WORLD))
         else
             table.insert(self.enemies, RammingShip(
-                Vector(
-                    love.math.random(10, love.graphics.getWidth() - 10),
-                    love.math.random(10, love.graphics.getHeight() - 10)),
+                Vector(x, y),
                 self.BUMP_WORLD,
                 self.playership))
         end
@@ -78,6 +90,8 @@ function Play:enter(prev)
 end
 
 function Play:update(dt)
+    self.scoreTimer = self.scoreTimer + dt
+
     local xAxis, yAxis = 0, 0
 
     if CONTROLS.UP and CONTROLS.DOWN then yAxis = 0
@@ -101,6 +115,14 @@ function Play:draw()
     self.playership:draw()
 
     Utils.map(self.enemies, 'draw')
+
+    love.graphics.setColor(255, 255, 255)
+    love.graphics.rectangle('line', 50, 150, love.graphics.getWidth() - 100, love.graphics.getHeight() - 200)
+
+    local min = math.floor(self.scoreTimer / 60)
+    local sec = math.floor(self.scoreTimer % 60)
+    love.graphics.print(('%02d:%02d'):format(min, sec), 0, 0)
+    love.graphics.print(self.gravityPulseText, 0, 20)
 end
 
 function Play:keypressed(key)

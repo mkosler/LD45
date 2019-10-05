@@ -1,6 +1,6 @@
 local WIDTH = 16
 local HEIGHT = 16
-local MAX_VELOCITY = Vector(200, 200)
+local MAX_VELOCITY = Vector(250, 250)
 
 return Class{
     init = function (self, position, world)

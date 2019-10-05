@@ -17,9 +17,13 @@ return Class{
         Signal.register('explode', function (bombPosition)
             self.pushed = true
 
+            local len = self.velocity:len()
+            local normal = (bombPosition - self.position):normalized()
+            local recoilVector = normal * len
+
             local dist = self.position:dist(bombPosition) / 500
-            self.velocity.x = Utils.clamp(-self.velocity.x / dist, -THRUST, THRUST)
-            self.velocity.y = Utils.clamp(-self.velocity.y / dist, -THRUST, THRUST)
+            self.velocity.x = Utils.clamp(-recoilVector.x / dist, -THRUST, THRUST)
+            self.velocity.y = Utils.clamp(-recoilVector.y / dist, -THRUST, THRUST)
         end)
     end,
 

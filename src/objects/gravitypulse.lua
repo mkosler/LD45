@@ -12,7 +12,6 @@ return Class{
     end,
 
     collide = function (self)
-        print('boom')
         Signal.emit('explode', self.position)
         self.world:remove(self)
     end,
