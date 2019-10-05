@@ -11,11 +11,23 @@ return Class{
         self.player = player
         self.world = world
         self.world:add(self, self.position.x, self.position.y, WIDTH, HEIGHT)
-        self.shipType = 'chase'
+        self.type = 'chase'
+
+        Signal.register('explode', function (bombPosition)
+            self.pushed = true
+
+            local dist = self.position:dist(bombPosition) / 500
+            self.velocity = -self.velocity / dist
+
+            Timer.tween(1, self.velocity, {x = 0, y = 0}, 'out-sine',
+                function () self.pushed = false end)
+        end)
     end,
 
     move = function (self, dt)
-        self.velocity = THRUST * (self.player.position - self.position):normalized()
+        if not self.pushed then
+            self.velocity = THRUST * (self.player.position - self.position):normalized()
+        end
 
         local goalX = self.position.x + self.velocity.x * dt
         local goalY = self.position.y + self.velocity.y * dt
@@ -27,7 +39,7 @@ return Class{
     end,
     
     filter = function (self, other)
-        if other.shipType == 'chase' then return 'slide'
+        if other.type == 'chase' then return 'slide'
         else return false end
     end,
 

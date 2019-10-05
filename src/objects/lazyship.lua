@@ -12,7 +12,15 @@ return Class{
             love.math.random(-THRUST, THRUST))
         self.world = world
         self.world:add(self, self.position.x, self.position.y, WIDTH, HEIGHT)
-        self.shipType = 'lazy'
+        self.type = 'lazy'
+
+        Signal.register('explode', function (bombPosition)
+            self.pushed = true
+
+            local dist = self.position:dist(bombPosition) / 500
+            self.velocity.x = Utils.clamp(-self.velocity.x / dist, -THRUST, THRUST)
+            self.velocity.y = Utils.clamp(-self.velocity.y / dist, -THRUST, THRUST)
+        end)
     end,
 
     move = function (self, dt)
@@ -40,6 +48,15 @@ return Class{
 
     setPosition = function (self, x, y)
         self.position.x, self.position.y = x, y
+    end,
+
+    explosionReaction = function (self, bombPosition)
+        self.pushed = true
+
+        local dist = self.position:dist(bombPosition)
+        self.velocity = -self.velocity / dist
+
+        Timer.after(2, function () self.pushed = false end)
     end,
 
     draw = function (self)

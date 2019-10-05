@@ -1,6 +1,6 @@
 local WIDTH = 16
 local HEIGHT = 16
-local MAX_VELOCITY = Vector(400, 400)
+local MAX_VELOCITY = Vector(200, 200)
 
 return Class{
     init = function (self, position, world)
@@ -21,6 +21,16 @@ return Class{
             self.world:move(self, goalX, goalY, self.filter)
 
         self:setPosition(actualX, actualY)
+
+        for i = 1, len do
+            self:collide(cols[i].other)
+        end
+    end,
+
+    collide = function (self, other)
+        if other.type == 'gravity' then
+            other:collide()
+        end
     end,
 
     filter = function (self, other)

@@ -19,6 +19,16 @@ local RIGHT_WALL = { x = love.graphics.getWidth(), y = 0, w = 10, h = love.graph
 local TOP_WALL = { x = 0, y = -10, w = love.graphics.getWidth(), h = 10, isWall = true }
 local BOTTOM_WALL = { x = 0, y = love.graphics.getHeight(), w = love.graphics.getWidth(), h = 10, isWall = true }
 
+function Play:spawnGravityPulse(time)
+    Timer.after(time, function ()
+        self.gravitypulse = GravityPulse(
+            Vector(love.graphics.getWidth() / 2, love.graphics.getHeight() / 2),
+            self.BUMP_WORLD)
+    end)
+
+    return time + 10
+end
+
 function Play:enter(prev)
     self.BUMP_WORLD = bump.newWorld()
 
@@ -30,6 +40,15 @@ function Play:enter(prev)
     self.playership = PlayerShip(Vector(300, 200), self.BUMP_WORLD)
 
     self.enemies = {}
+
+    self.gravitypulse = nil
+
+    self.nextGravityPulseSpawnTime = self:spawnGravityPulse(10)
+
+    Signal.register('explode', function ()
+        self.gravitypulse = nil
+        self.nextGravityPulseSpawnTime = self:spawnGravityPulse(self.nextGravityPulseSpawnTime)
+    end)
 
     Timer.every(1, function ()
         local rand = love.math.random()
@@ -77,6 +96,8 @@ function Play:update(dt)
 end
 
 function Play:draw()
+    if self.gravitypulse then self.gravitypulse:draw() end
+
     self.playership:draw()
 
     Utils.map(self.enemies, 'draw')

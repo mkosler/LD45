@@ -11,28 +11,35 @@ return Class{
         self.player = player
         self.world = world
         self.world:add(self, self.position.x, self.position.y, WIDTH, HEIGHT)
-        self.shipType = 'ramming'
+        self.type = 'ramming'
         self.velocity = THRUST * (self.player.position - self.position):normalized()
         self.angle = self.velocity:angleTo() * 180 / math.pi
+
+        Signal.register('explode', function (bombPosition)
+            self.pushed = true
+
+            local dist = self.position:dist(bombPosition) / 500
+            self.velocity = -self.velocity / dist
+
+            Timer.tween(1, self.velocity, {x = 0, y = 0}, 'out-sine',
+                function () self.pushed = false end)
+        end)
     end,
 
     move = function (self, dt)
-        local angle = self.velocity:angleTo(self.player.position - self.position) * 180 / math.pi
-        if angle < 0 then angle = angle + 360 end
-        -- print(('angle to: %.02f, self angle: %.02f'):format(angle, self.angle))
+        if not self.pushed then
+            local angle = self.velocity:angleTo(self.player.position - self.position) * 180 / math.pi
+            if angle < 0 then angle = angle + 360 end
 
-        if angle > 185 then self.angle = self.angle + TURN_RADIUS
-        elseif angle < 175 then self.angle = self.angle - TURN_RADIUS
+            if angle > 185 then self.angle = self.angle + TURN_RADIUS
+            elseif angle < 175 then self.angle = self.angle - TURN_RADIUS
+            end
+
+            local rad = self.angle * math.pi / 180
+
+            self.velocity.x = math.cos(rad) * THRUST
+            self.velocity.y = math.sin(rad) * THRUST
         end
-
-        -- if angle > 0.1 then self.angle = self.angle - 0.01
-        -- elseif angle < -0.1 then self.angle = self.angle + 0.01
-        -- end
-
-        local rad = self.angle * math.pi / 180
-
-        self.velocity.x = math.cos(rad) * THRUST
-        self.velocity.y = math.sin(rad) * THRUST
 
         local goalX = self.position.x + self.velocity.x * dt
         local goalY = self.position.y + self.velocity.y * dt
@@ -50,6 +57,15 @@ return Class{
 
     setPosition = function (self, x, y)
         self.position.x, self.position.y = x, y
+    end,
+
+    explosionReaction = function (self, bombPosition)
+        self.pushed = true
+
+        local dist = self.position:dist(bombPosition)
+        self.velocity = -self.velocity / dist
+
+        Timer.after(2, function () self.pushed = false end)
     end,
 
     draw = function (self)

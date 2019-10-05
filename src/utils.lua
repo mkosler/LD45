@@ -3,7 +3,7 @@ return {
         local nt = {}
         for k,v in ipairs(t) do
             if type(f) == 'string' then
-                nt[k] = v[f](v, ...)
+                if v[f] then nt[k] = v[f](v, ...) end
             else
                 nt[k] = f(v, ...)
             end
