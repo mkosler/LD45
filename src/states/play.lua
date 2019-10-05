@@ -27,24 +27,28 @@ function Play:enter(prev)
     self.BUMP_WORLD:add(TOP_WALL, TOP_WALL.x, TOP_WALL.y, TOP_WALL.w, TOP_WALL.h)
     self.BUMP_WORLD:add(BOTTOM_WALL, BOTTOM_WALL.x, BOTTOM_WALL.y, BOTTOM_WALL.w, BOTTOM_WALL.h)
 
+    self.playership = PlayerShip(Vector(300, 200), self.BUMP_WORLD)
+
     self.enemies = {}
 
-    for i = 1, 10 do
-        self.enemies[i] = LazyShip(
+    Timer.every(1, function ()
+        local rand = love.math.random()
+
+        if rand > 0.5 then
+            table.insert(self.enemies, ChaseShip(
                 Vector(
                     love.math.random(10, love.graphics.getWidth() - 10),
-                    love.math.random(10, love.graphics.getHeight() - 10)))
-        self.BUMP_WORLD:add(
-            self.enemies[i],
-            self.enemies[i].position.x,
-            self.enemies[i].position.y,
-            self.enemies[i].width,
-            self.enemies[i].height)
-    end
-
-    self.playership = PlayerShip(Vector(300, 200))
-    self.BUMP_WORLD:add(self.playership, self.playership.position.x, self.playership.position.y,
-        self.playership.width, self.playership.height)
+                    love.math.random(10, love.graphics.getHeight() - 10)),
+                self.BUMP_WORLD,
+                self.playership))
+        else
+            table.insert(self.enemies, LazyShip(
+                    Vector(
+                        love.math.random(10, love.graphics.getWidth() - 10),
+                        love.math.random(10, love.graphics.getHeight() - 10)),
+                    self.BUMP_WORLD))
+        end
+    end)
 end
 
 function Play:update(dt)
@@ -60,26 +64,9 @@ function Play:update(dt)
     elseif CONTROLS.RIGHT then xAxis = 1
     end
 
-    local goalX, goalY = self.playership:move(dt, xAxis, yAxis)
-    local actualX, actualY, cols, len = self.BUMP_WORLD:move(self.playership, goalX, goalY, self.playership.collide)
-    -- if len > 0 then print('hit!') end
-    self.playership:setPosition(actualX, actualY)
+    self.playership:move(dt, xAxis, yAxis)
 
-    for _,v in pairs(self.enemies) do
-        local egx, egy = v:move(dt)
-        local eax, eay, ecols, elen = self.BUMP_WORLD:move(v, egx, egy, v.collide)
-        for i = 1, elen do
-            if ecols[i].bounce then
-                if ecols[i].normal.x ~= 0 then 
-                    v.velocity.x = v.velocity.x * -1
-                end
-                if ecols[i].normal.y ~= 0 then 
-                    v.velocity.y = v.velocity.y * -1
-                end
-            end
-        end
-        v:setPosition(eax, eay)
-    end
+    Utils.map(self.enemies, 'move', dt)
 end
 
 function Play:draw()

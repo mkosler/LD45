@@ -6,6 +6,7 @@ Signal = require 'hump.signal'
 bump = require 'bump.bump'
 PlayerShip = require 'src.objects.playership'
 LazyShip = require 'src.objects.lazyship'
+ChaseShip = require 'src.objects.chaseship'
 Utils = require 'src.utils'
 
 STATES = {
