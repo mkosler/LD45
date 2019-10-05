@@ -3,6 +3,8 @@ Class = require 'hump.class'
 Vector = require 'hump.vector'
 Timer = require 'hump.timer'
 Signal = require 'hump.signal'
+bump = require 'bump.bump'
+PlayerShip = require 'src.objects.playership'
 
 STATES = {
     PLAY = require 'src.states.play'

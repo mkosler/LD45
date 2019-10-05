@@ -1,2 +1,6 @@
 hump/docs/
 hump/spec/
+bump/img/
+bump/spec/
+bump/rockspecs/
+*.zip
