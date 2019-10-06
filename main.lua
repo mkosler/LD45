@@ -46,7 +46,7 @@ function love.load()
         ['bomb-sfx'] = love.audio.newSource('assets/bomb.mp3', 'static'),
         ['player-death-sfx'] = love.audio.newSource('assets/player-death.mp3', 'static'),
         ['spawn-sfx'] = love.audio.newSource('assets/spawn.mp3', 'static'),
-        ['music'] = love.audio.newSource('assets/music.mp3'),
+        ['music'] = love.audio.newSource('assets/music.mp3', 'stream'),
     }
 
     local callbacks = {

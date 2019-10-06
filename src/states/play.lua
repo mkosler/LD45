@@ -54,6 +54,8 @@ end
 function Play:enter(prev, pfl, pft, pfr, pfb)
     ASSETS['music']:play()
 
+    self.smallerText = false
+
     if pfl then
         self.pfl = pfl
         self.gravityPulseNoSpawnZoneX = pfl + (pfr - pfl) / 2 - 225
