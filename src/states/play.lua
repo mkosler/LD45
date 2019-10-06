@@ -14,7 +14,7 @@ local CONTROLS = {
     RIGHT = false
 }
 
-local GRAVITY_PULSE_INITIAL_SPAWN_TIME = 1
+local GRAVITY_PULSE_INITIAL_SPAWN_TIME = 10
 local GRAVITY_PULSE_SPAWN_RATE_INCREMENT = 5
 
 local LEFT_WALL = { x = 40, y = 150, w = 10, h = love.graphics.getHeight() - 200, isWall = true }
@@ -31,15 +31,16 @@ function Play:spawnGravityPulse(time)
             self.gravityPulseText = ('%.02f'):format(self.nextGravityPulseSpawnCountdown)
         end, function ()
             self.gravityPulseText = 'Gravity pulse spawned'
-            local x, y = 0, 0
+            local x, y, dist = 0, 0, 0
 
             repeat
                 x = love.math.random(150, love.graphics.getWidth() - 250)
                 y = love.math.random(200, love.graphics.getHeight() - 250)
+                dist = Vector(x, y):dist(self.playership.position)
             until not Utils.hover(x, y,
                 self.gravityPulseNoSpawnZoneX, self.gravityPulseNoSpawnZoneY,
                 self.gravityPulseNoSpawnZoneX + self.gravityPulseNoSpawnZoneW,
-                self.gravityPulseNoSpawnZoneY + self.gravityPulseNoSpawnZoneH)
+                self.gravityPulseNoSpawnZoneY + self.gravityPulseNoSpawnZoneH) and dist > 300
 
             self.smallerText = true
             self.gravitypulse = GravityPulse(
@@ -105,7 +106,11 @@ function Play:enter(prev, pfl, pft, pfr, pfb)
     self.playership = PlayerShip(Vector(300, 200), self.BUMP_WORLD)
 
     -- Enemies
-    self.enemies = {}
+    self.enemies = {
+        -- LazyShip(Vector(400, 300), self.BUMP_WORLD),
+        -- ChaseShip(Vector(475, 300), self.BUMP_WORLD, self.playership),
+        -- RammingShip(Vector(550, 300), self.BUMP_WORLD, self.playership)
+    }
     self.spawnRates = {
         lazy = 0.3,
         chase = 0.0,
@@ -128,7 +133,7 @@ function Play:enter(prev, pfl, pft, pfr, pfb)
             x = love.math.random(100, love.graphics.getWidth() - 100)
             y = love.math.random(150, love.graphics.getHeight() - 100)
             dist = Vector(x, y):dist(self.playership.position)
-        until dist > 200
+        until dist > 300
 
         if rand > self.spawnRates.lazy then
             table.insert(self.enemies, LazyShip(
@@ -214,12 +219,6 @@ function Play:keyreleased(key)
     for k,v in pairs(KEYS) do
         if key == k then CONTROLS[v] = false end
     end
-end
-
-function Play:mousepressed(x, y, b)
-end
-
-function Play:mousereleased(x, y, b)
 end
 
 return Play

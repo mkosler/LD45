@@ -1,6 +1,6 @@
 local WIDTH = 32
 local HEIGHT = 32
-local THRUST = 200
+local THRUST = 180
 
 return Class{
     init = function (self, position, world, player)

@@ -30,19 +30,12 @@ function Retry:draw()
     love.graphics.draw(self.uiText,
         love.graphics.getWidth() / 2 - self.uiText:getWidth() / 2,
         love.graphics.getHeight() / 2 - self.uiText:getHeight() / 2)
-    -- local _, min, sec = Utils.toClockTime(self.time)
-    -- love.graphics.printf(
-    --     ('Game over...\nScore: %02d:%02d\nPress ENTER to continue...'):format(min, sec),
-    --     love.graphics.getWidth() / 2 - (200 / 2),
-    --     love.graphics.getHeight() / 2 - 50,
-    --     200,
-    --     'center')
     love.graphics.pop()
 end
 
 function Retry:keypressed(key)
     if key == 'return' then
-        Gamestate.switch(STATES.PLAY)
+        Gamestate.switch(STATES.TITLE)
     end
 end
 

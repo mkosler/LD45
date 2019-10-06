@@ -13,10 +13,10 @@ ChaseShip = require 'src.objects.chaseship'
 RammingShip = require 'src.objects.rammingship'
 GravityPulse = require 'src.objects.gravitypulse'
 
-local PLAYFIELD_LEFT = 50
-local PLAYFIELD_TOP = 150
-local PLAYFIELD_RIGHT = 50 + love.graphics.getWidth() - 100
-local PLAYFIELD_BOTTOM = 150 + love.graphics.getHeight() - 200
+PLAYFIELD_LEFT = 50
+PLAYFIELD_TOP = 150
+PLAYFIELD_RIGHT = 50 + love.graphics.getWidth() - 100
+PLAYFIELD_BOTTOM = 150 + love.graphics.getHeight() - 200
 
 local PLAYFIELD_CELL_WIDTH = (PLAYFIELD_RIGHT - PLAYFIELD_LEFT) / 16
 local PLAYFIELD_CELL_HEIGHT = (PLAYFIELD_BOTTOM - PLAYFIELD_TOP) / 16
@@ -31,7 +31,8 @@ function love.load()
 
     STATES = {
         PLAY = require 'src.states.play',
-        RETRY = require 'src.states.retry'
+        RETRY = require 'src.states.retry',
+        TITLE = require 'src.states.title',
     }
 
     ASSETS = {
@@ -41,11 +42,11 @@ function love.load()
         ['font-retry'] = love.graphics.newFont('assets/Born2bSportyV2.ttf', 36),
         ['glow-effect'] = glowEffect,
         ['crt-effect'] = crtEffect,
-        ['explosion-sfx'] = love.audio.newSource('assets/explosion.wav', 'static'),
-        ['bomb-sfx'] = love.audio.newSource('assets/bomb.wav', 'static'),
-        ['player-death-sfx'] = love.audio.newSource('assets/player-death.wav', 'static'),
-        ['spawn-sfx'] = love.audio.newSource('assets/spawn.wav', 'static'),
-        ['music'] = love.audio.newSource('assets/music.wav'),
+        ['explosion-sfx'] = love.audio.newSource('assets/explosion.mp3', 'static'),
+        ['bomb-sfx'] = love.audio.newSource('assets/bomb.mp3', 'static'),
+        ['player-death-sfx'] = love.audio.newSource('assets/player-death.mp3', 'static'),
+        ['spawn-sfx'] = love.audio.newSource('assets/spawn.mp3', 'static'),
+        ['music'] = love.audio.newSource('assets/music.mp3'),
     }
 
     local callbacks = {
@@ -57,7 +58,7 @@ function love.load()
     end
 
     Gamestate.registerEvents(callbacks)
-    Gamestate.switch(STATES.PLAY, PLAYFIELD_LEFT, PLAYFIELD_TOP, PLAYFIELD_RIGHT, PLAYFIELD_BOTTOM)
+    Gamestate.switch(STATES.TITLE)
 end
 
 function love.update(dt)
