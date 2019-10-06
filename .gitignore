@@ -1,6 +1,6 @@
-hump/docs/
-hump/spec/
-bump/img/
-bump/spec/
-bump/rockspecs/
+lib/hump/docs/
+lib/hump/spec/
+lib/bump/img/
+lib/bump/spec/
+lib/bump/rockspecs/
 *.zip

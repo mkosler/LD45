@@ -62,4 +62,12 @@ return {
     hover = function(x, y, l, t, r, b)
         return l <= x and x <= r and t <= y and y <= b
     end,
+
+    toClockTime = function (time)
+        local hrs = math.floor(time / 3600)
+        time = math.floor(time % 3600)
+        local min = math.floor(time / 60)
+        time = math.floor(time % 60)
+        return hrs, min, time
+    end
 }

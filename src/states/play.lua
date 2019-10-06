@@ -14,6 +14,7 @@ local CONTROLS = {
     RIGHT = false
 }
 
+local GRAVITY_PULSE_INITIAL_SPAWN_TIME = 1
 local GRAVITY_PULSE_SPAWN_RATE_INCREMENT = 5
 
 local LEFT_WALL = { x = 40, y = 150, w = 10, h = love.graphics.getHeight() - 200, isWall = true }
@@ -24,10 +25,10 @@ local BOTTOM_WALL = { x = 50, y = love.graphics.getHeight() - 50, w = love.graph
 function Play:spawnGravityPulse(time)
     self.nextGravityPulseSpawnCountdown = time
 
-    Timer.during(time,
+    self.spawnGravityPulseTimerHandle = Timer.during(time,
         function (dt)
             self.nextGravityPulseSpawnCountdown = self.nextGravityPulseSpawnCountdown - dt
-            self.gravityPulseText = ('Next gravity pulse: %.02f'):format(self.nextGravityPulseSpawnCountdown)
+            self.gravityPulseText = ('%.02f'):format(self.nextGravityPulseSpawnCountdown)
         end, function ()
             self.gravityPulseText = 'Gravity pulse spawned'
             local x = love.math.random(100, love.graphics.getWidth() - 200)
@@ -40,7 +41,15 @@ function Play:spawnGravityPulse(time)
     return time + GRAVITY_PULSE_SPAWN_RATE_INCREMENT
 end
 
-function Play:enter(prev)
+function Play:enter(prev, pfl, pft, pfr, pfb)
+    if pfl then self.pfl = pfl end
+    if pft then self.pft = pft end
+    if pfr then self.pfr = pfr end
+    if pfb then self.pfb = pfb end
+
+    self.uiText = love.graphics.newText(ASSETS['font-timers'])
+    self.gravityUiText = love.graphics.newText(ASSETS['font-gravity'])
+
     -- Score timer
     self.scoreTimer = 0
 
@@ -55,31 +64,48 @@ function Play:enter(prev)
     -- Gravity pulse logic
     self.gravitypulse = nil
     self.nextGravityPulseSpawnCountdown = nil
-    self.nextGravityPulseSpawnTime = self:spawnGravityPulse(10)
+    self.nextGravityPulseSpawnTime = self:spawnGravityPulse(GRAVITY_PULSE_INITIAL_SPAWN_TIME)
+
     Signal.register('explode', function ()
-        self.gravitypulse = nil
         self.nextGravityPulseSpawnTime = self:spawnGravityPulse(self.nextGravityPulseSpawnTime)
     end)
+
+    Signal.register('explodeEnd', function () self.gravitypulse = nil end)
 
     -- Player
     self.playership = PlayerShip(Vector(300, 200), self.BUMP_WORLD)
 
     -- Enemies
     self.enemies = {}
-    Timer.every(1, function ()
-        local rand = love.math.random()
-        local x = love.math.random(100, love.graphics.getWidth() - 100)
-        local y = love.math.random(150, love.graphics.getHeight() - 100)
+    self.spawnRates = {
+        lazy = 0.3,
+        chase = 0.0,
+        ramming = 0.0
+    }
 
-        if rand > 0.7 then
+    self.enemySpawnTimerHandle = Timer.every(1, function ()
+        local rand = love.math.random()
+        local x, y, dist = 0, 0
+
+        self.spawnRates.lazy = self.spawnRates.lazy + 0.03
+        self.spawnRates.chase = self.spawnRates.chase + 0.005
+        self.spawnRates.ramming = self.spawnRates.ramming
+
+        repeat
+            x = love.math.random(100, love.graphics.getWidth() - 100)
+            y = love.math.random(150, love.graphics.getHeight() - 100)
+            dist = Vector(x, y):dist(self.playership.position)
+        until dist > 200
+
+        if rand > self.spawnRates.lazy then
+            table.insert(self.enemies, LazyShip(
+                Vector(x, y),
+                self.BUMP_WORLD))
+        elseif rand > self.spawnRates.chase then
             table.insert(self.enemies, ChaseShip(
                 Vector(x, y),
                 self.BUMP_WORLD,
                 self.playership))
-        elseif rand > 0.2 then
-            table.insert(self.enemies, LazyShip(
-                Vector(x, y),
-                self.BUMP_WORLD))
         else
             table.insert(self.enemies, RammingShip(
                 Vector(x, y),
@@ -87,6 +113,16 @@ function Play:enter(prev)
                 self.playership))
         end
     end)
+
+    -- Game over
+    Signal.register('death', function ()
+        Gamestate.switch(STATES.RETRY, self.scoreTimer)
+    end)
+end
+
+function Play:leave()
+    Timer.clear()
+    Signal.clearPattern('.*')
 end
 
 function Play:update(dt)
@@ -110,19 +146,28 @@ function Play:update(dt)
 end
 
 function Play:draw()
-    if self.gravitypulse then self.gravitypulse:draw() end
+    love.graphics.setScissor(self.pfl, self.pft, self.pfr - self.pfl, self.pfb - self.pft)
+    ASSETS['glow-effect'](function ()
+        if self.gravitypulse then self.gravitypulse:draw() end
 
-    self.playership:draw()
+        self.playership:draw()
 
-    Utils.map(self.enemies, 'draw')
-
-    love.graphics.setColor(255, 255, 255)
-    love.graphics.rectangle('line', 50, 150, love.graphics.getWidth() - 100, love.graphics.getHeight() - 200)
+        Utils.map(self.enemies, 'draw')
+    end)
+    love.graphics.setScissor()
 
     local min = math.floor(self.scoreTimer / 60)
     local sec = math.floor(self.scoreTimer % 60)
-    love.graphics.print(('%02d:%02d'):format(min, sec), 0, 0)
-    love.graphics.print(self.gravityPulseText, 0, 20)
+    self.uiText:set(('%02d:%02d'):format(min, sec))
+    love.graphics.draw(self.uiText, 175, 137 - self.uiText:getHeight())
+
+    if not self.gravitypulse then
+        self.uiText:setf(self.gravityPulseText, 200, 'left')
+        love.graphics.draw(self.uiText, 1020, 134 - self.uiText:getHeight())
+    else
+        self.gravityUiText:setf(self.gravityPulseText, 200, 'left')
+        love.graphics.draw(self.gravityUiText, 1020, 129 - self.gravityUiText:getHeight())
+    end
 end
 
 function Play:keypressed(key)

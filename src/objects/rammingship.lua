@@ -10,7 +10,7 @@ return Class{
         self.height = HEIGHT
         self.player = player
         self.world = world
-        self.world:add(self, self.position.x, self.position.y, WIDTH, HEIGHT)
+        self.world:add(self, self.position.x - WIDTH / 2, self.position.y - HEIGHT / 2, WIDTH * 0.8, HEIGHT * 0.8)
         self.type = 'ramming'
         self.velocity = THRUST * (self.player.position - self.position):normalized()
         self.angle = self.velocity:angleTo() * 180 / math.pi
@@ -22,7 +22,12 @@ return Class{
             local normal = (bombPosition - self.position):normalized()
             local recoilVector = normal * len
 
-            local dist = self.position:dist(bombPosition) / 500
+            local dist = self.position:dist(bombPosition)
+            if dist < 200 then
+                self.dead = true
+                self.world:remove(self)
+            end
+            dist = dist / 500
             self.velocity = -recoilVector / dist
 
             Timer.tween(1, self.velocity, {x = 0, y = 0}, 'out-sine',
@@ -31,6 +36,8 @@ return Class{
     end,
 
     move = function (self, dt)
+        if self.dead then return end
+
         if not self.pushed then
             local angle = self.velocity:angleTo(self.player.position - self.position) * 180 / math.pi
             if angle < 0 then angle = angle + 360 end
@@ -73,10 +80,21 @@ return Class{
     end,
 
     draw = function (self)
+        if self.dead then return end
+
         love.graphics.push('all')
         love.graphics.setColor(255, 0, 0)
         love.graphics.translate(self.position.x, self.position.y)
-        love.graphics.rectangle('line', 0, 0, WIDTH, HEIGHT)
+        local vertices = {
+            0, -HEIGHT / 2,
+            WIDTH / 2, HEIGHT / 2,
+            -WIDTH / 2, HEIGHT / 2
+        }
+        -- local normalVelocity = self.velocity:normalized()
+        -- love.graphics.line(0, 0, 20 * normalVelocity.x, 20 * normalVelocity.y)
+        love.graphics.rotate(math.pi / 2 + self.angle * math.pi / 180)
+        love.graphics.polygon('line', vertices)
+        -- love.graphics.circle('line', WIDTH / 2, HEIGHT / 2, WIDTH, 8)
         love.graphics.pop()
     end
 }

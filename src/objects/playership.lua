@@ -9,11 +9,46 @@ return Class{
         self.height = HEIGHT
         self.world = world
         self.world:add(self, self.position.x, self.position.y, WIDTH, HEIGHT)
+
+        Signal.register('dying', function ()
+            self.isDead = true
+            Timer.after(2.5, function ()
+                Signal.emit('death')
+            end)
+        end)
+
+        -- Particle system for death
+        self.particle = love.graphics.newCanvas(4, 4)
+        love.graphics.setCanvas(self.particle)
+            love.graphics.push('all')
+            love.graphics.setColor(0, 255, 0)
+            love.graphics.rectangle('fill', 0, 0, 4, 4)
+            love.graphics.pop()
+        love.graphics.setCanvas()
+        -- self.particle = love.graphics.newImage('fat-pikachu.jpg')
+
+        self.particleSystem = love.graphics.newParticleSystem(self.particle, 32)
+        self.particleSystem:setParticleLifetime(0.5, 1.5)
+        self.particleSystem:setEmissionRate(25)
+        self.particleSystem:setSizeVariation(1)
+        self.particleSystem:setLinearAcceleration(-200, -200, 200, 200)
+        -- self.particleSystem:setColors(
+        --     1, 0, 0, 1,
+        --     0, 1, 0, 1,
+        --     0, 0, 1, 1,
+        --     1, 1, 0, 1,
+        --     1, 0, 1, 1,
+        --     0, 1, 1, 1)
     end,
 
     -- Instant acceleration
     -- Direction relative to the screen
     move = function (self, dt, xAxis, yAxis)
+        if self.isDead then
+            self.particleSystem:update(dt)
+            return
+        end
+
         local goalX = self.position.x + (MAX_VELOCITY.x * xAxis) * dt
         local goalY = self.position.y + (MAX_VELOCITY.y * yAxis) * dt
 
@@ -30,6 +65,8 @@ return Class{
     collide = function (self, other)
         if other.type == 'gravity' then
             other:collide()
+        elseif not other.isWall then
+            Signal.emit('dying')
         end
     end,
 
@@ -44,9 +81,23 @@ return Class{
 
     draw = function (self)
         love.graphics.push('all')
-        love.graphics.setColor(0, 255, 0)
         love.graphics.translate(self.position.x, self.position.y)
-        love.graphics.rectangle('fill', 0, 0, WIDTH, HEIGHT)
+        if not self.isDead then
+            love.graphics.setColor(0, 255, 0)
+            local vertices = {
+                WIDTH * 0.25, 0,
+                WIDTH * 0.75, 0,
+                WIDTH,        HEIGHT * 0.25,
+                WIDTH,        HEIGHT * 0.75,
+                WIDTH * 0.75, HEIGHT,
+                WIDTH * 0.25, HEIGHT,
+                0,            HEIGHT * 0.75,
+                0,            HEIGHT * 0.25
+            }
+            love.graphics.polygon('line', vertices)
+        else
+            love.graphics.draw(self.particleSystem, 0, 0)
+        end
         love.graphics.pop()
     end
 }

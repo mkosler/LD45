@@ -20,7 +20,12 @@ return Class{
             local normal = (bombPosition - self.position):normalized()
             local recoilVector = normal * len
 
-            local dist = self.position:dist(bombPosition) / 500
+            local dist = self.position:dist(bombPosition)
+            if dist < 200 then
+                self.dead = true
+                self.world:remove(self)
+            end
+            dist = dist / 500
             self.velocity = -recoilVector / dist
 
             Timer.tween(1, self.velocity, {x = 0, y = 0}, 'out-sine',
@@ -29,6 +34,8 @@ return Class{
     end,
 
     move = function (self, dt)
+        if self.dead then return end
+
         if not self.pushed then
             self.velocity = THRUST * (self.player.position - self.position):normalized()
         end
@@ -52,6 +59,8 @@ return Class{
     end,
 
     draw = function (self)
+        if self.dead then return end
+
         love.graphics.push('all')
         love.graphics.setColor(255, 255, 0)
         love.graphics.translate(self.position.x, self.position.y)
