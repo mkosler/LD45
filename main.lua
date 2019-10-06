@@ -23,6 +23,11 @@ local PLAYFIELD_CELL_HEIGHT = (PLAYFIELD_BOTTOM - PLAYFIELD_TOP) / 16
 
 function love.load()
     local glowEffect = moonshine(moonshine.effects.glow)
+    glowEffect.parameters = {
+        glow = { min_luma = 0 },
+    }
+
+    local crtEffect = moonshine(moonshine.effects.crt)
 
     STATES = {
         PLAY = require 'src.states.play',
@@ -34,10 +39,19 @@ function love.load()
         ['font-timers'] = love.graphics.newFont('assets/Born2bSportyV2.ttf', 48),
         ['font-gravity'] = love.graphics.newFont('assets/Born2bSportyV2.ttf', 24),
         ['font-retry'] = love.graphics.newFont('assets/Born2bSportyV2.ttf', 36),
-        ['glow-effect'] = glowEffect
+        ['glow-effect'] = glowEffect,
+        ['crt-effect'] = crtEffect,
     }
 
-    Gamestate.registerEvents()
+    local callbacks = {
+        'update'
+    }
+
+    for k in pairs(love.handlers) do
+        callbacks[#callbacks + 1] = k
+    end
+
+    Gamestate.registerEvents(callbacks)
     Gamestate.switch(STATES.PLAY, PLAYFIELD_LEFT, PLAYFIELD_TOP, PLAYFIELD_RIGHT, PLAYFIELD_BOTTOM)
 end
 
@@ -46,16 +60,13 @@ function love.update(dt)
 end
 
 function love.draw()
-    -- love.graphics.setColor(100, 100, 100)
-    -- love.graphics.line(love.graphics.getWidth() / 2, 0, love.graphics.getWidth() / 2, love.graphics.getHeight())
-    -- love.graphics.line(0, love.graphics.getHeight() / 2, love.graphics.getWidth(), love.graphics.getHeight() / 2)
-
+    ASSETS['crt-effect'](function()
     love.graphics.setLineWidth(5)
 
     love.graphics.push('all')
     love.graphics.setColor(255, 255, 255)
 
-    local titleText = love.graphics.newText(ASSETS['font-title'], 'GAME TITLE HERE')
+    local titleText = love.graphics.newText(ASSETS['font-title'], 'DEFENSELESS')
     love.graphics.draw(titleText, love.graphics.getWidth() / 2 - titleText:getWidth() / 2, 150 - titleText:getHeight())
 
     love.graphics.push('all')
@@ -77,6 +88,8 @@ function love.draw()
     end
     love.graphics.pop()
 
+    Gamestate.draw()
+
     love.graphics.rectangle(
         'line',
         PLAYFIELD_LEFT,
@@ -84,4 +97,5 @@ function love.draw()
         PLAYFIELD_RIGHT - PLAYFIELD_LEFT,
         PLAYFIELD_BOTTOM - PLAYFIELD_TOP)
     love.graphics.pop()
+    end)
 end

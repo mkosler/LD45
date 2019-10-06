@@ -14,23 +14,7 @@ return Class{
         self.world:add(self, self.position.x, self.position.y, WIDTH, HEIGHT)
         self.type = 'lazy'
 
-        self.particle = love.graphics.newCanvas(4, 4)
-        love.graphics.setCanvas(self.particle)
-            love.graphics.push('all')
-            love.graphics.setColor(0, 255, 255)
-            love.graphics.rectangle('fill', 0, 0, 4, 4)
-            love.graphics.pop()
-        love.graphics.setCanvas()
-
-        self.particleSystem = love.graphics.newParticleSystem(self.particle, 32)
-        self.particleSystem:setParticleLifetime(0.2, 0.5)
-        self.particleSystem:setEmissionRate(32)
-        self.particleSystem:setSizeVariation(1)
-        self.particleSystem:setTangentialAcceleration(-50, 50)
-        self.particleSystem:setEmitterLifetime(0.5)
-        self.particleSystem:stop()
-
-        Signal.register('explode', function (bombPosition)
+        self.explodeHandle = Signal.register('explode', function (bombPosition)
             self.pushed = true
 
             local len = self.velocity:len()
@@ -39,10 +23,26 @@ return Class{
 
             local dist = self.position:dist(bombPosition)
             if dist < 200 then
-                self.dead = true
-                self.particleSystem:setLinearAcceleration((-recoilVector):unpack())
-                self.particleSystem:start()
+                self.dying = true
+                Signal.remove('explode', self.explodeHandle)
+                Timer.after(0.5, function () self.dead = true end)
                 self.world:remove(self)
+
+                self.debris = {}
+                for i = 1, love.math.random(10, 25) do
+                    local pl = love.math.random(len / 2, len * 1.5)
+                    local p = Vector(
+                        love.math.random(self.position.x - 10, self.position.x + 10),
+                        love.math.random(self.position.y - 10, self.position.y + 10)
+                    )
+                    local pnorm = (bombPosition - p):normalized()
+                    local prv = pnorm * pl
+
+                    table.insert(self.debris, {
+                        position = p,
+                        velocity = -prv
+                    })
+                end
             end
             dist = dist / 500
             self.velocity.x = Utils.clamp(-recoilVector.x / dist, -THRUST, THRUST)
@@ -51,8 +51,12 @@ return Class{
     end,
 
     move = function (self, dt)
-        if self.dead then
-            self.particleSystem:update(dt)
+        if self.dead then return end
+
+        if self.dying then
+            for _,v in pairs(self.debris) do
+                v.position = v.position + v.velocity * dt
+            end
             return
         end
 
@@ -92,13 +96,20 @@ return Class{
     end,
 
     draw = function (self)
+        if self.dead then return end
+
         love.graphics.push('all')
         love.graphics.setColor(0, 255, 255)
         love.graphics.translate(self.position.x, self.position.y)
-        if not self.dead then
-            love.graphics.rectangle('line', 0, 0, WIDTH, HEIGHT)
+        if self.dying then
+            love.graphics.push('all')
+            love.graphics.origin()
+            for _,v in pairs(self.debris) do
+                love.graphics.points(v.position:unpack())
+            end
+            love.graphics.pop()
         else
-            love.graphics.draw(self.particleSystem, 0, 0)
+            love.graphics.rectangle('line', 0, 0, WIDTH, HEIGHT)
         end
         love.graphics.pop()
     end

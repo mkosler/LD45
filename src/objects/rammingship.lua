@@ -15,7 +15,7 @@ return Class{
         self.velocity = THRUST * (self.player.position - self.position):normalized()
         self.angle = self.velocity:angleTo() * 180 / math.pi
 
-        Signal.register('explode', function (bombPosition)
+        self.explodeHandle = Signal.register('explode', function (bombPosition)
             self.pushed = true
 
             local len = self.velocity:len()
@@ -24,8 +24,26 @@ return Class{
 
             local dist = self.position:dist(bombPosition)
             if dist < 200 then
-                self.dead = true
+                self.dying = true
+                Signal.remove('explode', self.explodeHandle)
+                Timer.after(0.5, function () self.dead = true end)
                 self.world:remove(self)
+
+                self.debris = {}
+                for i = 1, love.math.random(10, 25) do
+                    local pl = love.math.random(len / 2, len * 1.5)
+                    local p = Vector(
+                        love.math.random(self.position.x - 10, self.position.x + 10),
+                        love.math.random(self.position.y - 10, self.position.y + 10)
+                    )
+                    local pnorm = (bombPosition - p):normalized()
+                    local prv = pnorm * pl
+
+                    table.insert(self.debris, {
+                        position = p,
+                        velocity = -prv
+                    })
+                end
             end
             dist = dist / 500
             self.velocity = -recoilVector / dist
@@ -37,6 +55,13 @@ return Class{
 
     move = function (self, dt)
         if self.dead then return end
+
+        if self.dying then
+            for _,v in pairs(self.debris) do
+                v.position = v.position + v.velocity * dt
+            end
+            return
+        end
 
         if not self.pushed then
             local angle = self.velocity:angleTo(self.player.position - self.position) * 180 / math.pi
@@ -85,16 +110,22 @@ return Class{
         love.graphics.push('all')
         love.graphics.setColor(255, 0, 0)
         love.graphics.translate(self.position.x, self.position.y)
-        local vertices = {
-            0, -HEIGHT / 2,
-            WIDTH / 2, HEIGHT / 2,
-            -WIDTH / 2, HEIGHT / 2
-        }
-        -- local normalVelocity = self.velocity:normalized()
-        -- love.graphics.line(0, 0, 20 * normalVelocity.x, 20 * normalVelocity.y)
-        love.graphics.rotate(math.pi / 2 + self.angle * math.pi / 180)
-        love.graphics.polygon('line', vertices)
-        -- love.graphics.circle('line', WIDTH / 2, HEIGHT / 2, WIDTH, 8)
+        if self.dying then
+            love.graphics.push('all')
+            love.graphics.origin()
+            for _,v in pairs(self.debris) do
+                love.graphics.points(v.position:unpack())
+            end
+            love.graphics.pop()
+        else
+            local vertices = {
+                0, -HEIGHT / 2,
+                WIDTH / 2, HEIGHT / 2,
+                -WIDTH / 2, HEIGHT / 2
+            }
+            love.graphics.rotate(math.pi / 2 + self.angle * math.pi / 180)
+            love.graphics.polygon('line', vertices)
+        end
         love.graphics.pop()
     end
 }

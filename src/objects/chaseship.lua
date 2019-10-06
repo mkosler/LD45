@@ -13,7 +13,7 @@ return Class{
         self.world:add(self, self.position.x, self.position.y, WIDTH, HEIGHT)
         self.type = 'chase'
 
-        Signal.register('explode', function (bombPosition)
+        self.explodeHandle = Signal.register('explode', function (bombPosition)
             self.pushed = true
 
             local len = self.velocity:len()
@@ -22,8 +22,26 @@ return Class{
 
             local dist = self.position:dist(bombPosition)
             if dist < 200 then
-                self.dead = true
+                self.dying = true
+                Signal.remove('explode', self.explodeHandle)
+                Timer.after(0.5, function () self.dead = true end)
                 self.world:remove(self)
+
+                self.debris = {}
+                for i = 1, love.math.random(10, 25) do
+                    local pl = love.math.random(len / 2, len * 1.5)
+                    local p = Vector(
+                        love.math.random(self.position.x - 10, self.position.x + 10),
+                        love.math.random(self.position.y - 10, self.position.y + 10)
+                    )
+                    local pnorm = (bombPosition - p):normalized()
+                    local prv = pnorm * pl
+
+                    table.insert(self.debris, {
+                        position = p,
+                        velocity = -prv
+                    })
+                end
             end
             dist = dist / 500
             self.velocity = -recoilVector / dist
@@ -35,6 +53,13 @@ return Class{
 
     move = function (self, dt)
         if self.dead then return end
+
+        if self.dying then
+            for _,v in pairs(self.debris) do
+                v.position = v.position + v.velocity * dt
+            end
+            return
+        end
 
         if not self.pushed then
             self.velocity = THRUST * (self.player.position - self.position):normalized()
@@ -64,7 +89,16 @@ return Class{
         love.graphics.push('all')
         love.graphics.setColor(255, 255, 0)
         love.graphics.translate(self.position.x, self.position.y)
-        love.graphics.circle('line', WIDTH / 2, HEIGHT / 2, WIDTH / 2)
+        if self.dying then
+            love.graphics.push('all')
+            love.graphics.origin()
+            for _,v in pairs(self.debris) do
+                love.graphics.points(v.position:unpack())
+            end
+            love.graphics.pop()
+        else
+            love.graphics.circle('line', WIDTH / 2, HEIGHT / 2, WIDTH / 2)
+        end
         love.graphics.pop()
     end
 }

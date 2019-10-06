@@ -14,7 +14,7 @@ local CONTROLS = {
     RIGHT = false
 }
 
-local GRAVITY_PULSE_INITIAL_SPAWN_TIME = 1
+local GRAVITY_PULSE_INITIAL_SPAWN_TIME = 10
 local GRAVITY_PULSE_SPAWN_RATE_INCREMENT = 5
 
 local LEFT_WALL = { x = 40, y = 150, w = 10, h = love.graphics.getHeight() - 200, isWall = true }
@@ -31,8 +31,8 @@ function Play:spawnGravityPulse(time)
             self.gravityPulseText = ('%.02f'):format(self.nextGravityPulseSpawnCountdown)
         end, function ()
             self.gravityPulseText = 'Gravity pulse spawned'
-            local x = love.math.random(100, love.graphics.getWidth() - 200)
-            local y = love.math.random(150, love.graphics.getHeight() - 200)
+            local x = love.math.random(150, love.graphics.getWidth() - 250)
+            local y = love.math.random(200, love.graphics.getHeight() - 250)
             self.gravitypulse = GravityPulse(
                 Vector(x, y),
                 self.BUMP_WORLD)
@@ -163,10 +163,10 @@ function Play:draw()
 
     if not self.gravitypulse then
         self.uiText:setf(self.gravityPulseText, 200, 'left')
-        love.graphics.draw(self.uiText, 1020, 134 - self.uiText:getHeight())
+        love.graphics.draw(self.uiText, 1010, 134 - self.uiText:getHeight())
     else
         self.gravityUiText:setf(self.gravityPulseText, 200, 'left')
-        love.graphics.draw(self.gravityUiText, 1020, 129 - self.gravityUiText:getHeight())
+        love.graphics.draw(self.gravityUiText, 1010, 129 - self.gravityUiText:getHeight())
     end
 end
 

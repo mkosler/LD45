@@ -7,7 +7,7 @@ return Class{
         self.width = WIDTH
         self.height = HEIGHT
         self.world = world
-        self.world:add(self, self.position.x - WIDTH / 2, self.position.y - HEIGHT / 2, WIDTH, HEIGHT)
+        self.world:add(self, self.position.x - WIDTH, self.position.y - HEIGHT, WIDTH, HEIGHT)
         self.type = 'gravity'
 
         self.pulseEffectWidth = WIDTH / 2
@@ -74,8 +74,6 @@ return Class{
             love.graphics.polygon('fill', vertices)
         else
             love.graphics.push('all')
-            love.graphics.setColor(0, 0, 0, 240)
-            love.graphics.circle('fill', WIDTH / 2, HEIGHT / 2, self.radius)
             love.graphics.setColor(self.shockWaveColor, self.shockWaveColor, self.shockWaveColor)
             love.graphics.circle('line', WIDTH / 2, HEIGHT / 2, self.radius)
             love.graphics.pop()
