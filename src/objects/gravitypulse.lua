@@ -18,13 +18,15 @@ return Class{
 
         self.radius = 0
         self.shockWaveColor = 255
-        self.explodeHandle = Signal.register('explode', function ()
+        self.explodeHandle = Signal.register('pulseExplode', function ()
+            ASSETS['bomb-sfx']:setVolume(0.6)
+            ASSETS['bomb-sfx']:play()
             self.isExploding = true
             self.world:remove(self)
 
             Timer.tween(1, self, { radius = 200, shockWaveColor = 0 }, 'linear', function ()
-                Signal.remove('explode', self.explodeHandle)
-                Signal.emit('explodeEnd')
+                Signal.remove('pulseExplode', self.explodeHandle)
+                Signal.emit('pulseExplodeEnd')
             end)
         end)
     end,
@@ -46,7 +48,7 @@ return Class{
     end,
 
     collide = function (self)
-        Signal.emit('explode', self.position)
+        Signal.emit('pulseExplode', self.position)
     end,
 
     draw = function (self)

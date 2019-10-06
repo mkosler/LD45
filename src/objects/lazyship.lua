@@ -13,8 +13,9 @@ return Class{
         self.world = world
         self.world:add(self, self.position.x, self.position.y, WIDTH, HEIGHT)
         self.type = 'lazy'
+        self.explosionSound = ASSETS['explosion-sfx']:clone()
 
-        self.explodeHandle = Signal.register('explode', function (bombPosition)
+        self.explodeHandle = Signal.register('pulseExplode', function (bombPosition)
             self.pushed = true
 
             local len = self.velocity:len()
@@ -24,7 +25,9 @@ return Class{
             local dist = self.position:dist(bombPosition)
             if dist < 200 then
                 self.dying = true
-                Signal.remove('explode', self.explodeHandle)
+                Signal.emit('shipExplode')
+                self.explosionSound:play()
+                Signal.remove('pulseExplode', self.explodeHandle)
                 Timer.after(0.5, function () self.dead = true end)
                 self.world:remove(self)
 

@@ -12,6 +12,7 @@ return Class{
 
         Signal.register('dying', function ()
             self.isDead = true
+            ASSETS['player-death-sfx']:play()
             Timer.after(2.5, function ()
                 Signal.emit('death')
             end)
@@ -25,20 +26,12 @@ return Class{
             love.graphics.rectangle('fill', 0, 0, 4, 4)
             love.graphics.pop()
         love.graphics.setCanvas()
-        -- self.particle = love.graphics.newImage('fat-pikachu.jpg')
 
         self.particleSystem = love.graphics.newParticleSystem(self.particle, 32)
         self.particleSystem:setParticleLifetime(0.5, 1.5)
         self.particleSystem:setEmissionRate(25)
         self.particleSystem:setSizeVariation(1)
         self.particleSystem:setLinearAcceleration(-200, -200, 200, 200)
-        -- self.particleSystem:setColors(
-        --     1, 0, 0, 1,
-        --     0, 1, 0, 1,
-        --     0, 0, 1, 1,
-        --     1, 1, 0, 1,
-        --     1, 0, 1, 1,
-        --     0, 1, 1, 1)
     end,
 
     -- Instant acceleration

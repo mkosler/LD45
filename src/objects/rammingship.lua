@@ -1,6 +1,6 @@
 local WIDTH = 32
 local HEIGHT = 32
-local THRUST = 300
+local THRUST = 350
 local TURN_RADIUS = 1.0
 
 return Class{
@@ -10,12 +10,19 @@ return Class{
         self.height = HEIGHT
         self.player = player
         self.world = world
-        self.world:add(self, self.position.x - WIDTH / 2, self.position.y - HEIGHT / 2, WIDTH * 0.8, HEIGHT * 0.8)
+        self.bbox = {
+            x = -WIDTH / 2,
+            y = -HEIGHT / 2,
+            w = WIDTH,
+            h = HEIGHT
+        }
+        self.world:add(self, self.position.x + self.bbox.x, self.position.y + self.bbox.y, self.bbox.w, self.bbox.h)
         self.type = 'ramming'
         self.velocity = THRUST * (self.player.position - self.position):normalized()
         self.angle = self.velocity:angleTo() * 180 / math.pi
+        self.explosionSound = ASSETS['explosion-sfx']:clone()
 
-        self.explodeHandle = Signal.register('explode', function (bombPosition)
+        self.explodeHandle = Signal.register('pulseExplode', function (bombPosition)
             self.pushed = true
 
             local len = self.velocity:len()
@@ -25,7 +32,9 @@ return Class{
             local dist = self.position:dist(bombPosition)
             if dist < 200 then
                 self.dying = true
-                Signal.remove('explode', self.explodeHandle)
+                Signal.emit('shipExplode')
+                self.explosionSound:play()
+                Signal.remove('pulseExplode', self.explodeHandle)
                 Timer.after(0.5, function () self.dead = true end)
                 self.world:remove(self)
 
@@ -81,9 +90,9 @@ return Class{
         local goalY = self.position.y + self.velocity.y * dt
 
         local actualX, actualY, cols, len =
-            self.world:move(self, goalX, goalY, self.filter)
+            self.world:move(self, goalX + self.bbox.x, goalY + self.bbox.y, self.filter)
 
-        self:setPosition(actualX, actualY)
+        self:setPosition(actualX - self.bbox.x, actualY - self.bbox.y)
     end,
 
     filter = function (self, other)
@@ -110,6 +119,11 @@ return Class{
         love.graphics.push('all')
         love.graphics.setColor(255, 0, 0)
         love.graphics.translate(self.position.x, self.position.y)
+        -- Debug bbox
+        -- love.graphics.push('all')
+        -- love.graphics.setLineWidth(1)
+        -- love.graphics.rectangle('line', self.bbox.x, self.bbox.y, self.bbox.w, self.bbox.h)
+        -- love.graphics.pop()
         if self.dying then
             love.graphics.push('all')
             love.graphics.origin()

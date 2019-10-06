@@ -41,6 +41,11 @@ function love.load()
         ['font-retry'] = love.graphics.newFont('assets/Born2bSportyV2.ttf', 36),
         ['glow-effect'] = glowEffect,
         ['crt-effect'] = crtEffect,
+        ['explosion-sfx'] = love.audio.newSource('assets/explosion.wav', 'static'),
+        ['bomb-sfx'] = love.audio.newSource('assets/bomb.wav', 'static'),
+        ['player-death-sfx'] = love.audio.newSource('assets/player-death.wav', 'static'),
+        ['spawn-sfx'] = love.audio.newSource('assets/spawn.wav', 'static'),
+        ['music'] = love.audio.newSource('assets/music.wav'),
     }
 
     local callbacks = {

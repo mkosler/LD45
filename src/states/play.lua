@@ -14,7 +14,7 @@ local CONTROLS = {
     RIGHT = false
 }
 
-local GRAVITY_PULSE_INITIAL_SPAWN_TIME = 10
+local GRAVITY_PULSE_INITIAL_SPAWN_TIME = 1
 local GRAVITY_PULSE_SPAWN_RATE_INCREMENT = 5
 
 local LEFT_WALL = { x = 40, y = 150, w = 10, h = love.graphics.getHeight() - 200, isWall = true }
@@ -31,8 +31,17 @@ function Play:spawnGravityPulse(time)
             self.gravityPulseText = ('%.02f'):format(self.nextGravityPulseSpawnCountdown)
         end, function ()
             self.gravityPulseText = 'Gravity pulse spawned'
-            local x = love.math.random(150, love.graphics.getWidth() - 250)
-            local y = love.math.random(200, love.graphics.getHeight() - 250)
+            local x, y = 0, 0
+
+            repeat
+                x = love.math.random(150, love.graphics.getWidth() - 250)
+                y = love.math.random(200, love.graphics.getHeight() - 250)
+            until not Utils.hover(x, y,
+                self.gravityPulseNoSpawnZoneX, self.gravityPulseNoSpawnZoneY,
+                self.gravityPulseNoSpawnZoneX + self.gravityPulseNoSpawnZoneW,
+                self.gravityPulseNoSpawnZoneY + self.gravityPulseNoSpawnZoneH)
+
+            self.smallerText = true
             self.gravitypulse = GravityPulse(
                 Vector(x, y),
                 self.BUMP_WORLD)
@@ -42,10 +51,24 @@ function Play:spawnGravityPulse(time)
 end
 
 function Play:enter(prev, pfl, pft, pfr, pfb)
-    if pfl then self.pfl = pfl end
-    if pft then self.pft = pft end
-    if pfr then self.pfr = pfr end
-    if pfb then self.pfb = pfb end
+    ASSETS['music']:play()
+
+    if pfl then
+        self.pfl = pfl
+        self.gravityPulseNoSpawnZoneX = pfl + (pfr - pfl) / 2 - 225
+    end
+    if pft then
+        self.pft = pft
+        self.gravityPulseNoSpawnZoneY = pft + (pfb - pft) / 2 - 175
+    end
+    if pfr then
+        self.pfr = pfr
+        self.gravityPulseNoSpawnZoneW = 450
+    end
+    if pfb then
+        self.pfb = pfb
+        self.gravityPulseNoSpawnZoneH = 350
+    end
 
     self.uiText = love.graphics.newText(ASSETS['font-timers'])
     self.gravityUiText = love.graphics.newText(ASSETS['font-gravity'])
@@ -66,11 +89,17 @@ function Play:enter(prev, pfl, pft, pfr, pfb)
     self.nextGravityPulseSpawnCountdown = nil
     self.nextGravityPulseSpawnTime = self:spawnGravityPulse(GRAVITY_PULSE_INITIAL_SPAWN_TIME)
 
-    Signal.register('explode', function ()
+    Signal.register('pulseExplode', function ()
+        self.spawnerPause = true
+        self.smallerText = false
+        self.gravityPulseText = ''
         self.nextGravityPulseSpawnTime = self:spawnGravityPulse(self.nextGravityPulseSpawnTime)
     end)
 
-    Signal.register('explodeEnd', function () self.gravitypulse = nil end)
+    Signal.register('pulseExplodeEnd', function ()
+        self.gravitypulse = nil
+        self.spawnerPause = false
+    end)
 
     -- Player
     self.playership = PlayerShip(Vector(300, 200), self.BUMP_WORLD)
@@ -84,6 +113,10 @@ function Play:enter(prev, pfl, pft, pfr, pfb)
     }
 
     self.enemySpawnTimerHandle = Timer.every(1, function ()
+        if self.spawnerPause then return end
+
+        ASSETS['spawn-sfx']:play()
+
         local rand = love.math.random()
         local x, y, dist = 0, 0
 
@@ -123,6 +156,7 @@ end
 function Play:leave()
     Timer.clear()
     Signal.clearPattern('.*')
+    ASSETS['music']:stop()
 end
 
 function Play:update(dt)
@@ -161,7 +195,7 @@ function Play:draw()
     self.uiText:set(('%02d:%02d'):format(min, sec))
     love.graphics.draw(self.uiText, 175, 137 - self.uiText:getHeight())
 
-    if not self.gravitypulse then
+    if not self.smallerText then
         self.uiText:setf(self.gravityPulseText, 200, 'left')
         love.graphics.draw(self.uiText, 1010, 134 - self.uiText:getHeight())
     else
